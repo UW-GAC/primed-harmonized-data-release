@@ -1,0 +1,103 @@
+---
+title: "qc_checks"
+output: html_document
+---
+
+```{r}
+library(jsonlite)
+library(forcats)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Phenotype QC checks
+
+## Introduction
+
+This file contains the output for data checks done on harmonized phenotype data. Data importing and stacking happens in `import_data.R`.
+
+## Data checks
+
+
+```{r}
+url.json <- "https://github.com/UW-GAC/primed_data_models/raw/refs/heads/main/PRIMED_phenotype_data_model.json"
+
+df.json <- fromJSON(url.json) 
+
+df.data_type <- df.json$tables %>% 
+  mutate(
+    columns = purrr::map(
+      columns,
+      ~ dplyr::select(.x, column, data_type)
+    )
+  ) %>%
+  unnest(cols=columns)
+```
+
+### Blood pressure
+
+```{r}
+df.blood_pressure <- read.csv("data/out/cmqt_blood_pressure.csv")
+
+df.blood_pressure.data_type <- df.data_type %>% 
+  filter(table == "cmqt_blood_pressure")
+
+vars.float <- df.blood_pressure.data_type %>% 
+  filter(data_type == "float") %>% 
+  pull(column)
+
+vars.enumeration <- df.blood_pressure.data_type %>%
+  filter(data_type == "enumeration") %>%
+  pull(column)
+```
+
+#### Float variables
+
+```{r}
+for (col in vars.float){
+  p <- df.blood_pressure %>% 
+    ggplot(aes(y=.data[[col]], group=file_name)) +
+    geom_boxplot() +
+    labs(title=col) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank()
+  )
+  
+  print(p)
+}
+# todo geom_violin
+```
+
+#### Enumeration variables
+
+```{r}
+for (col in vars.enumeration){
+  p <- df.blood_pressure %>% 
+    mutate(
+      "{col}" := fct_na_value_to_level(
+        factor(.data[[col]]),
+        level = "Missing"
+      )
+    ) %>%
+    ggplot(aes(x = file_name, fill = .data[[col]])) +
+    geom_bar(position = "fill") +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+      x = "Data Source",
+      y = "Proportion",
+      fill = col,
+      title=col
+      ) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank()
+      )
+
+  print(p)
+}
+
+```
