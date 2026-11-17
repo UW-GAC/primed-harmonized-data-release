@@ -1,0 +1,13 @@
+# Data files
+*.xlsx
+*.csv
+
+# Report files
+*.html
+*.pdf
+
+# R project files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
