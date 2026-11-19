@@ -1,17 +1,20 @@
 ---
-title: "qc_checks"
+title: "Phenotype QC checks"
 output: html_document
 ---
 
-```{r}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include=FALSE}
 library(jsonlite)
 library(forcats)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+source("utils/helpers.R")
 ```
-
-# Phenotype QC checks
 
 ## Introduction
 
@@ -37,8 +40,8 @@ df.data_type <- df.json$tables %>%
 
 ### Blood pressure
 
-```{r}
-df.blood_pressure <- read.csv("data/out/cmqt_blood_pressure.csv")
+```{r prep data}
+df.blood_pressure <- read.csv("data/out/stacked_tables/cmqt_blood_pressure.csv")
 
 df.blood_pressure.data_type <- df.data_type %>% 
   filter(table == "cmqt_blood_pressure")
@@ -54,50 +57,84 @@ vars.enumeration <- df.blood_pressure.data_type %>%
 
 #### Float variables
 
+```{r float plots}
+display_float_plots(
+  vars.float=vars.float,
+  df=df.blood_pressure
+)
+```
+
+Note that one dataset (PRIMED_CHS_DBGAP_PHS000287_V7_P1_DS-CVD-MDS_42905ed075a4b6ea.tsv) has only one data point, so it was not displayed in these plots.
+
+#### Enumeration variables
+
+```{r enumeration plots}
+display_enumeration_plots(
+  vars.enumeration=vars.enumeration,
+  df=df.blood_pressure
+)
+```
+
+#### Missingness check
+
 ```{r}
-for (col in vars.float){
-  p <- df.blood_pressure %>% 
-    ggplot(aes(y=.data[[col]], group=file_name)) +
-    geom_boxplot() +
-    labs(title=col) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank()
-  )
-  
-  print(p)
-}
-# todo geom_violin
+display_missingness(
+  vars.enumeration=vars.enumeration,
+  vars.float=vars.float,
+  df=df.blood_pressure
+)
+```
+
+#### Domain-specific checks
+
+To be implemented in next iteration.
+
+### Glycemic
+
+```{r prep data glycemic}
+df.glycemic <- read.csv("data/out/stacked_tables/cmqt_glycemic.csv")
+
+df.glycemic.data_type <- df.data_type %>% 
+  filter(table == "cmqt_glycemic")
+
+vars.float <- df.glycemic.data_type %>% 
+  filter(data_type == "float") %>% 
+  pull(column)
+
+vars.enumeration <- df.glycemic.data_type %>%
+  filter(data_type == "enumeration") %>%
+  pull(column)
+```
+
+#### Float variables
+
+```{r float plots glycemic}
+display_float_plots(
+  vars.float=vars.float,
+  df=df.glycemic
+)
 ```
 
 #### Enumeration variables
 
-```{r}
-for (col in vars.enumeration){
-  p <- df.blood_pressure %>% 
-    mutate(
-      "{col}" := fct_na_value_to_level(
-        factor(.data[[col]]),
-        level = "Missing"
-      )
-    ) %>%
-    ggplot(aes(x = file_name, fill = .data[[col]])) +
-    geom_bar(position = "fill") +
-    scale_y_continuous(labels = scales::percent) +
-    labs(
-      x = "Data Source",
-      y = "Proportion",
-      fill = col,
-      title=col
-      ) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank()
-      )
-
-  print(p)
-}
-
+```{r enumeration plots glycemic}
+display_enumeration_plots(
+  vars.enumeration=vars.enumeration,
+  df=df.glycemic
+)
 ```
+
+#### Missingness check
+
+```{r}
+display_missingness(
+  vars.enumeration=vars.enumeration,
+  vars.float=vars.float,
+  df=df.glycemic
+)
+```
+
+#### Domain-specific checks
+
+To be implemented.
+
