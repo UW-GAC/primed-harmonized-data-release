@@ -8,14 +8,19 @@ library(purrr)
 library(readr)
 source("utils/helpers.R")
 
+# Get inventory
 avworkspace_namespace("primed-cc")
 avworkspace_name("PRIMED_inventory")
-
 df.invt <- avtable("phenotype_inventory")
 
+# Get list of domains
+list.domains <- df.invt %>% pull(domain) %>% unique()
 
-df.anthropometry <- download_domain(domain_str="cmqt_anthropometry")
-df.blood_pressure <- download_domain(domain_str="cmqt_blood_pressure")
+# Get all stacked tables
+for (domain_str in list.domains[7:10]){
+  print(domain_str)
+  download_domain(domain_str=domain_str)
+}
 
 # todo: might want to force age_at_obs to numeric type
 
