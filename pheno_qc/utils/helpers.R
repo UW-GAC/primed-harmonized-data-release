@@ -54,6 +54,7 @@ download_domain <- function(domain_str){
       file.path(
         "data",
         "out",
+        "stacked_tables",
         paste0(domain_str, ".csv")
       ),
       row.names=F
